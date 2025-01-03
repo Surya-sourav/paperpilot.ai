@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PaperPilot.ai - Beta</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header>
+            <div class="brand">
+                <h1>PaperPilot.ai</h1>
+                <span class="beta-tag">Beta Version</span>
+            </div>
+            <div class="header-buttons">
+                <button id="pricingBtn" class="nav-button">
+                    <i class="fas fa-tags"></i> Pricing
+                </button>
+                <button id="contactBtn" class="nav-button">
+                    <i class="fas fa-envelope"></i> Contact
+                </button>
+                <button id="infoBtn" class="info-button">
+                    <i class="fas fa-info-circle"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Upload Section (shown before PDF upload) -->
+        <div id="uploadSection" class="upload-section">
+            <label for="pdf-upload" class="file-label">
+                <i class="fas fa-file-upload"></i>
+                <span>Upload Research Paper (PDF)</span>
+            </label>
+            <input type="file" id="pdf-upload" class="file-input" accept=".pdf">
+        </div>
+
+        <!-- Split Panel Interface (hidden initially) -->
+        <div id="splitInterface" class="split-interface" style="display: none;">
+            <!-- Left Panel - PDF Viewer -->
+            <div class="pdf-panel">
+                <div id="pdfViewer" class="pdf-viewer"></div>
+                <div class="pdf-controls">
+                    <button id="prevPage" class="control-button">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <span id="pageInfo">Page 1 of 1</span>
+                    <button id="nextPage" class="control-button">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Panel - Notes and Features -->
+            <div class="features-panel">
+                <!-- Feature Tabs -->
+                <div class="feature-tabs">
+                    <button class="feature-tab active" data-tab="notes">
+                        <i class="fas fa-pen"></i> Notes
+                    </button>
+                    <button class="feature-tab" data-tab="converse">
+                        <i class="fas fa-comments"></i> Converse
+                    </button>
+                    <button class="feature-tab" data-tab="summarize">
+                        <i class="fas fa-compress-alt"></i> Summarize
+                    </button>
+                    <button class="feature-tab" data-tab="podcast">
+                        <i class="fas fa-podcast"></i> Podcast
+                    </button>
+                </div>
+
+                <!-- Feature Content -->
+                <div class="feature-content">
+                    <!-- Notes Tab -->
+                    <div id="notesTab" class="feature-tab-content active">
+                        <div class="notes-container">
+                            <div class="editor-toolbar">
+                                <button class="magic-select-btn">
+                                    <i class="fas fa-magic"></i> Magic Select
+                                </button>
+                                <button class="save-pdf-btn">
+                                    <i class="fas fa-file-pdf"></i> Save as PDF
+                                </button>
+                            </div>
+                            <div id="editor">
+                                <!-- Quill editor will be initialized here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Converse Tab -->
+                    <div id="converseTab" class="feature-tab-content">
+                        <div class="chat-container">
+                            <div id="chatMessages" class="chat-messages"></div>
+                            <div class="chat-input-container">
+                                <textarea 
+                                    id="chatInput" 
+                                    placeholder="Ask a question about the paper..."
+                                    rows="3"
+                                ></textarea>
+                                <button class="send-button">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Summarize Tab -->
+                    <div id="summarizeTab" class="feature-tab-content">
+                        <div class="summarize-container">
+                            <div class="summarize-options">
+                                <button class="summarize-btn action-button">
+                                    <i class="fas fa-magic"></i> Summarize Selection
+                                </button>
+                            </div>
+                            <div id="summaryResult" class="summary-result"></div>
+                        </div>
+                    </div>
+
+                    <!-- Podcast Tab -->
+                    <div id="podcastTab" class="feature-tab-content">
+                        <div class="podcast-container">
+                            <div id="podcastScript" class="podcast-script"></div>
+                            <div id="audioPlayer" class="audio-player" style="display: none;">
+                                <audio controls></audio>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Animation -->
+        <div id="loading" class="loading" style="display: none;">
+            <div class="music-wave">
+                <span style="--i:1"></span>
+                <span style="--i:2"></span>
+                <span style="--i:3"></span>
+                <span style="--i:4"></span>
+                <span style="--i:5"></span>
+            </div>
+        </div>
+
+        <!-- Info Modal -->
+        <div id="infoModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>About PaperPilot.ai</h2>
+                <p>Welcome to PaperPilot.ai Beta! We're revolutionizing how researchers interact with academic papers. 
+                   Currently in beta, we offer essential features like paper analysis, summarization, and podcast conversion completely free.</p>
+                <p>Stay tuned for our upcoming premium version, which will introduce advanced features including 
+                   AI-powered research paper writing assistance and automated paper reviews.</p>
+            </div>
+        </div>
+
+        <!-- Pricing Modal -->
+        <div id="pricingModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Pricing Plans</h2>
+                <div class="pricing-cards">
+                    <div class="pricing-card">
+                        <h3>Free Plan</h3>
+                        <div class="beta-label">Current Beta Version</div>
+                        <ul>
+                            <li><i class="fas fa-check"></i> Unlimited Papers</li>
+                            <li><i class="fas fa-check"></i> Magic Select</li>
+                            <li><i class="fas fa-check"></i> Converse with Papers</li>
+                            <li><i class="fas fa-check"></i> Summarize</li>
+                            <li><i class="fas fa-check"></i> Podcast Generation</li>
+                        </ul>
+                        <button class="action-button">Start Free</button>
+                    </div>
+                    <div class="pricing-card featured">
+                        <h3>Premium</h3>
+                        <div class="coming-soon">Coming Soon</div>
+                        <ul>
+                            <li><i class="fas fa-check"></i> All Free Plan Features</li>
+                            <li><i class="fas fa-plus"></i> Research Paper Writing Assistant</li>
+                            <li><i class="fas fa-plus"></i> AI Paper Reviewer</li>
+                            <li><i class="fas fa-plus"></i> Priority Support</li>
+                            <li><i class="fas fa-plus"></i> Early Access to New Features</li>
+                        </ul>
+                        <button class="action-button" disabled>Coming Soon</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Modal -->
+        <div id="contactModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Connect With Us</h2>
+                <div class="welcome-message">
+                    <p>Welcome to PaperPilot.ai! Your intelligent research companion that transforms complex academic papers into accessible knowledge. Experience seamless paper analysis, smart summarization, and innovative features designed to enhance your research workflow.</p>
+                </div>
+                <div class="social-links">
+                    <a href="https://linkedin.com/in/your-profile" target="_blank" class="social-link">
+                        <i class="fab fa-linkedin"></i>
+                        LinkedIn
+                    </a>
+                    <a href="https://twitter.com/your-handle" target="_blank" class="social-link">
+                        <i class="fab fa-twitter"></i>
+                        Twitter
+                    </a>
+                    <a href="https://github.com/your-profile" target="_blank" class="social-link">
+                        <i class="fab fa-github"></i>
+                        GitHub
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.9.359/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.9.359/pdf.worker.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.9.359/pdf.worker.min.js';</script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
