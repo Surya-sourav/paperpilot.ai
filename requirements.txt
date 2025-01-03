@@ -1,9 +1,13 @@
 Flask==3.0.3
 Flask-Cors==5.0.0
+Flask-Mail==0.10.0
 gTTS==2.5.3
 PyMuPDF==1.25.1
-python-dotenv==2.0.0
+python-dotenv==1.0.0
 requests==2.32.3
 Werkzeug==3.0.6
 gunicorn==23.0.0
+gspread==6.1.4
+google-auth==2.37.0
+google-auth-oauthlib==1.2.1
 fpdf==1.7.2
