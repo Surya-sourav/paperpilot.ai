@@ -1,0 +1,807 @@
+/* Base Styles */
+:root {
+    --primary: #ff4081;
+    --primary-dark: #c60055;
+    --background: #1e1e1e;
+    --card-bg: rgba(255, 255, 255, 0.1);
+    --text: #f0f0f0;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--background);
+    color: var(--text);
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+}
+
+/* App Container */
+.app-container {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.header-buttons {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+h1 {
+    font-size: 2rem;
+    background: linear-gradient(45deg, var(--primary), #9c27b0);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin: 0;
+}
+
+.nav-button, .info-button {
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.nav-button:hover, .info-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Upload Section */
+.upload-section {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+}
+
+.file-label {
+    border: 2px dashed rgba(255, 64, 129, 0.5);
+    border-radius: 1rem;
+    padding: 3rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.file-label:hover {
+    border-color: var(--primary);
+    background: rgba(255, 64, 129, 0.1);
+}
+
+.file-input {
+    display: none;
+}
+
+/* Split Interface */
+.split-interface {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+/* PDF Panel */
+.pdf-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #2a2a2a;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+}
+
+.pdf-viewer {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    background: #fff;
+}
+
+.pdf-viewer canvas {
+    display: block;
+    margin: 0 auto 1rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.pdf-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.control-button {
+    background: none;
+    border: none;
+    color: var(--text);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.3s;
+}
+
+.control-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.control-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Features Panel */
+.features-panel {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    background: #2a2a2a;
+}
+
+/* Feature Tabs */
+.feature-tabs {
+    display: flex;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.feature-tab {
+    background: none;
+    border: none;
+    color: var(--text);
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.feature-tab.active {
+    background: var(--primary);
+}
+
+.feature-tab:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Feature Content */
+.feature-content {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+}
+
+.feature-tab-content {
+    display: none;
+    height: 100%;
+    padding: 1rem;
+    overflow-y: auto;
+}
+
+.feature-tab-content.active {
+    display: block;
+}
+
+/* Notes Editor */
+.notes-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.editor-toolbar {
+    display: flex;
+    gap: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#editor {
+    flex: 1;
+    background: white;
+    border-radius: 0.5rem;
+    overflow-y: auto;
+    font-size: 16px;
+}
+
+.ql-container {
+    height: calc(100% - 42px) !important;
+}
+
+.ql-editor {
+    min-height: 100%;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+.magic-select-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s;
+}
+
+.magic-select-btn:hover {
+    background: var(--primary-dark);
+}
+
+/* Chat Interface */
+.chat-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.chat-message {
+    margin-bottom: 1rem;
+    max-width: 80%;
+    padding: 0.75rem 1rem;
+    border-radius: 1rem;
+    animation: fadeIn 0.3s ease;
+}
+
+.user-message {
+    background: var(--primary);
+    color: white;
+    margin-left: auto;
+    border-bottom-right-radius: 0.25rem;
+}
+
+.ai-message {
+    background: rgba(255, 255, 255, 0.1);
+    margin-right: auto;
+    border-bottom-left-radius: 0.25rem;
+}
+
+/* Modals */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+}
+
+.modal-content {
+    background: #2e2e2e;
+    margin: 5% auto;
+    padding: 2rem;
+    border-radius: 1rem;
+    max-width: 800px;
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.close {
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+    font-size: 1.5rem;
+    color: var(--primary);
+    cursor: pointer;
+}
+
+/* Pricing Cards */
+.pricing-cards {
+    display: flex;
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.pricing-card {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2rem;
+    border-radius: 1rem;
+    text-align: center;
+}
+
+.pricing-card.featured {
+    background: rgba(255, 64, 129, 0.1);
+    border: 2px solid var(--primary);
+}
+
+.pricing-card h3 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.price {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--primary);
+    margin-bottom: 1.5rem;
+}
+
+.pricing-card ul {
+    list-style: none;
+    margin-bottom: 2rem;
+}
+
+.pricing-card li {
+    margin-bottom: 0.5rem;
+}
+
+/* Contact Form */
+.contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea {
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.2);
+    color: var(--text);
+    font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .split-interface {
+        flex-direction: column;
+    }
+
+    .features-panel {
+        width: 100%;
+    }
+
+    .feature-tabs {
+        flex-wrap: wrap;
+    }
+
+    .feature-tab {
+        flex: 1;
+        min-width: 120px;
+    }
+
+    .pricing-cards {
+        flex-direction: column;
+    }
+
+    .modal-content {
+        margin: 10% 1rem;
+    }
+}
+.extracted-text {
+    padding: 2rem;
+    font-size: 16px;
+    line-height: 1.6;
+    color: #000;
+    background: #fff;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.extracted-text p {
+    margin-bottom: 1rem;
+}
+
+#editor {
+    color: #000 !important;
+    background: #fff !important;
+}
+
+.ql-editor {    
+    color: #000 !important;
+}
+
+/* PDF Viewer Styles */
+.pdf-page-wrapper {
+    position: relative;
+    margin: 20px auto;
+    background-color: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.textLayer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    opacity: 0.2;
+    line-height: 1.0;
+}
+
+.textLayer > span {
+    color: blue;
+    position: absolute;
+    white-space: pre;
+    cursor: text;
+    transform-origin: 0% 0%;
+}
+
+.textLayer ::selection {
+    background: rgba(242, 245, 41, 0.2);
+}
+
+/* Feature Button Styles */
+.feature-tab {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.feature-tab:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.feature-tab.active {
+    background: var(--primary);
+    color: white;
+}
+
+/* Action Buttons */
+.action-button {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.action-button:hover {
+    background: var(--primary-dark);
+}
+
+/* Podcast Controls */
+.pdf-viewer {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    background: #fff;
+}
+
+.pdf-page-wrapper {
+    position: relative;
+    margin: 0 auto;
+    background: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.textLayer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    opacity: 0.2;
+    line-height: 1.0;
+}
+
+.textLayer > span {
+    color: blue;
+    position: absolute;
+    white-space: pre;
+    cursor: text;
+    transform-origin: 0% 0%;
+}
+
+.textLayer ::selection {
+    background: rgba(0, 0, 0, 0.3); /* Increased opacity from 0.2 to 0.3 */
+    color: transparent;
+}
+
+/* Podcast section styles */
+.podcast-container {
+    padding: 20px;
+}
+
+.podcast-script {
+    background: white;
+    color: black;
+    padding: 20px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    max-height: 400px;
+    overflow-y: auto;
+    line-height: 1.6;
+}
+
+.audio-player {
+    background: rgba(255,255,255,0.1);
+    padding: 20px;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.audio-player audio {
+    width: 100%;
+    margin-top: 10px;
+}
+
+#generateAudioBtn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+#generateAudioBtn:hover {
+    background: var(--primary-dark);
+}
+
+.pdf-viewer {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    background: #fff;
+}
+
+.pdf-page-wrapper {
+    position: relative;
+    margin: 0 auto;
+    background: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.textLayer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    opacity: 0.2;
+    line-height: 1.0;
+}
+
+.textLayer > span {
+    color: transparent;
+    position: absolute;
+    white-space: pre;
+    cursor: text;
+    transform-origin: 0% 0%;
+}
+
+/* Make text selection more visible */
+.textLayer ::selection {
+    background: rgba(0, 123, 255, 0.4) !important; /* Brighter blue with higher opacity */
+    color: transparent;
+}
+
+/* Loading animation */
+.loading-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #ff0066;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Podcast section styles */
+.podcast-container {
+    padding: 20px;
+}
+
+.podcast-script {
+    background: white;
+    color: black;
+    padding: 20px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    max-height: 400px;
+    overflow-y: auto;
+    line-height: 1.6;
+}
+
+.audio-player {
+    background: rgba(255,255,255,0.1);
+    padding: 20px;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.audio-player audio {
+    width: 100%;
+    margin-top: 10px;
+}
+
+#generateAudioBtn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+#generateAudioBtn:hover {
+    background: var(--primary-dark);
+}
+
+/* Contact modal updates */
+.social-links {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #eee;
+}
+
+.social-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    background: #f3f3f3;
+    color: #333;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.social-link:hover {
+    background: #e0e0e0;
+    transform: translateY(-2px);
+}
+
+/* Feedback form */
+.feedback-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-weight: 500;
+    color: #333;
+}
+
+.form-group input,
+.form-group textarea {
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+}
+
+.form-group textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.submit-button {
+    background: #ff0066;
+    color: white;
+    border: none;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.submit-button:hover {
+    background: #e5005c;
+}
