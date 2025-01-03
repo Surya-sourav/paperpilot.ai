@@ -11,8 +11,6 @@ import fitz  # PyMuPDF for PDF rendering
 from datetime import datetime
 from flask import Flask, request, jsonify
 import logging
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
