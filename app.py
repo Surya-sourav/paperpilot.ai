@@ -362,6 +362,8 @@ def convert_to_notes():
         return jsonify({'notes': notes})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-    
+
+
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    port = int(os.getenv("PORT", 5000))
+    app.run(debug=True, port=port)
