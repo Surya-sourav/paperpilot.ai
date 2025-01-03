@@ -23,7 +23,9 @@ app = Flask(__name__, template_folder='templates', static_folder='static')
 CORS(app)
 
 # API Configuration
-os.environ["CEREBRAS_API_KEY"] = "csk-mckj2jpdthdv9cypr5yk6r58j2ywxncvtdv43w8wftj6k8vk"
+CEREBRAS_API_KEY = os.getenv("CEREBRAS_API_KEY")
+if not CEREBRAS_API_KEY:
+    raise EnvironmentError("CEREBRAS_API_KEY is not set in the environment variables")
 
 # Configure upload folder
 UPLOAD_FOLDER = 'uploads'
