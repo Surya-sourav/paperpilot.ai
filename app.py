@@ -1,17 +1,3 @@
-# from flask import Flask, request, jsonify, render_template, send_file, Response, url_for
-# from flask_cors import CORS
-# import logging
-# from cerebras.cloud.sdk import Cerebras
-# import os
-# import tempfile
-# from gtts import gTTS
-# import PyMuPDF as fitz
-# import PyPDF2
-# from werkzeug.utils import secure_filename
-# # import fitz  # PyMuPDF for PDF rendering
-# from datetime import datetime
-# from flask import Flask, request, jsonify
-# import logging
 from flask import Flask, request, jsonify, render_template, send_file, Response, url_for
 from flask_cors import CORS
 import logging
@@ -19,11 +5,13 @@ from cerebras.cloud.sdk import Cerebras
 import os
 import tempfile
 from gtts import gTTS
+import PyMuPDF as fitz
 import PyPDF2
 from werkzeug.utils import secure_filename
-import PyMuPDF 
-import fitz # PyMuPDF for PDF rendering
+# import fitz  # PyMuPDF for PDF rendering
 from datetime import datetime
+from flask import Flask, request, jsonify
+import logging
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
