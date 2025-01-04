@@ -9,3 +9,4 @@ PyMuPDF==1.25.1
 python-dotenv==1.0.0
 requests==2.32.3
 Werkzeug==3.0.6
+cerebras_cloud_sdk==1.9.0
