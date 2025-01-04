@@ -5,13 +5,10 @@ from cerebras.cloud.sdk import Cerebras
 import os
 import tempfile
 from gtts import gTTS
-import PyMuPDF as fitz
 import PyPDF2
 from werkzeug.utils import secure_filename
-# import fitz  # PyMuPDF for PDF rendering
 from datetime import datetime
-from flask import Flask, request, jsonify
-import logging
+import fitz  # This is how we import PyMuPDF
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
