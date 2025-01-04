@@ -6,6 +6,7 @@ import os
 import tempfile
 from gtts import gTTS
 import PyMuPDF as fitz
+import PyMuPDF
 from werkzeug.utils import secure_filename
 # import fitz  # PyMuPDF for PDF rendering
 from datetime import datetime
