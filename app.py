@@ -9,6 +9,7 @@ import PyPDF2
 from werkzeug.utils import secure_filename
 from datetime import datetime
 import fitz  # This is how we import PyMuPDF
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -21,6 +22,9 @@ CORS(app)
 CEREBRAS_API_KEY = os.getenv("CEREBRAS_API_KEY")
 if not CEREBRAS_API_KEY:
     raise EnvironmentError("CEREBRAS_API_KEY is not set in the environment variables")
+
+# Initialize Cerebras client
+cerebras_client = Cerebras(api_key=CEREBRAS_API_KEY)
 
 # Configure upload folder
 UPLOAD_FOLDER = 'uploads'
@@ -48,8 +52,6 @@ def extract_text_from_pdf(file_path):
 
 def summarize_text(content, is_selection=False):
     try:
-        client = Cerebras()
-        
         system_prompt = """You are an expert at summarizing academic content.
         Create a clear, concise summary that captures the main points."""
         
@@ -59,17 +61,14 @@ def summarize_text(content, is_selection=False):
 
         Keep it concise but informative."""
 
-        response = client.chat.completions.create(
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
+        response = cerebras_client.generate(
             model="llama3.1-8b",
+            prompt=f"{system_prompt}\n\n{user_prompt}",
             max_tokens=500,
             temperature=0.7
         )
 
-        return response.choices[0].message.content
+        return response.text
 
     except Exception as e:
         logger.error(f"Error generating summary: {e}")
@@ -77,8 +76,6 @@ def summarize_text(content, is_selection=False):
 
 def generate_podcast_script(content):
     try:
-        client = Cerebras()
-        
         system_prompt = """You are an expert at creating engaging podcast scripts from academic content. 
         Convert this research paper into a natural conversational narrative.
         Important: Do not use any speaker labels, names, or markers like 'Host A' or 'Host B'.
@@ -96,18 +93,15 @@ def generate_podcast_script(content):
         - Avoid any special characters or formatting
         """
 
-        response = client.chat.completions.create(
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
+        response = cerebras_client.generate(
             model="llama3.1-8b",
+            prompt=f"{system_prompt}\n\n{user_prompt}",
             max_tokens=1000,
             temperature=0.7
         )
 
         # Clean up the response to remove any remaining markers or special characters
-        script = response.choices[0].message.content
+        script = response.text
         script = script.replace('Host A:', '').replace('Host B:', '')
         script = script.replace('Q:', '').replace('A:', '')
         script = ' '.join(script.split())  # Normalize whitespace
@@ -117,10 +111,9 @@ def generate_podcast_script(content):
     except Exception as e:
         logger.error(f"Error generating podcast script: {e}")
         raise
+
 def chat_with_paper(paper_content, user_question, selected_text=None):
     try:
-        client = Cerebras()
-        
         context = selected_text if selected_text else paper_content[:2000]
         
         system_prompt = """You are an AI research assistant helping users understand 
@@ -134,17 +127,14 @@ def chat_with_paper(paper_content, user_question, selected_text=None):
 
         Provide a clear, concise response that directly addresses the question."""
 
-        response = client.chat.completions.create(
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
+        response = cerebras_client.generate(
             model="llama3.1-8b",
+            prompt=f"{system_prompt}\n\n{user_prompt}",
             max_tokens=500,
             temperature=0.7
         )
 
-        return response.choices[0].message.content
+        return response.text
 
     except Exception as e:
         logger.error(f"Error in chat response: {e}")
@@ -260,45 +250,13 @@ def generate_podcast():
         if not paper_content:
             return jsonify({'error': 'Missing paper content'}), 400
             
-        client = Cerebras()
-        
-        system_prompt = """You are an expert at creating engaging podcast scripts from academic content.
-        Convert this research paper into a natural narrative flow suitable for text-to-speech.
-        Do not use any speaker labels or dialogue markers."""
-        
-        user_prompt = f"""Create a clear, engaging podcast script from this research paper:
-
-        {paper_content}
-
-        Requirements:
-        - Present as a flowing narrative
-        - Focus on key findings and implications
-        - Use natural, conversational language
-        - Avoid any special characters or formatting
-        - Do not use any speaker labels or dialogue markers
-        - Structure with clear introduction, main points, and conclusion"""
-
-        response = client.chat.completions.create(
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            model="llama3.1-8b",
-            max_tokens=2000,
-            temperature=0.7
-        )
-
-        # Clean up the script
-        script = response.choices[0].message.content
-        script = ' '.join(script.split())  # Normalize whitespace
-        
+        script = generate_podcast_script(paper_content)
         return jsonify({'podcast_script': script})
         
     except Exception as e:
         logger.error(f"Error in generate_podcast: {e}")
         return jsonify({'error': str(e)}), 500
     
-
 @app.route('/generate_audio', methods=['POST'])
 def generate_audio():
     try:
@@ -319,6 +277,7 @@ def generate_audio():
     except Exception as e:
         logger.error(f"Error in generate_audio: {e}")
         return jsonify({'error': str(e)}), 500
+
 @app.route('/convert_to_notes', methods=['POST'])
 def convert_to_notes():
     try:
@@ -327,9 +286,6 @@ def convert_to_notes():
         
         if not text:
             return jsonify({'error': 'No text provided'}), 400
-        
-        # Use Cerebras for better note generation
-        client = Cerebras()
         
         system_prompt = """You are an expert at converting academic text into comprehensive study notes.
         Create detailed, well-structured notes that capture the main points and supporting details."""
@@ -345,21 +301,17 @@ def convert_to_notes():
         - Related topics and implications
         Use bullet points and proper formatting."""
 
-        response = client.chat.completions.create(
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
+        response = cerebras_client.generate(
             model="llama3.1-8b",
+            prompt=f"{system_prompt}\n\n{user_prompt}",
             max_tokens=1000,
             temperature=0.7
         )
         
-        notes = response.choices[0].message.content
+        notes = response.text
         return jsonify({'notes': notes})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
 
 if __name__ == '__main__':
     port = int(os.getenv("PORT", 5000))
