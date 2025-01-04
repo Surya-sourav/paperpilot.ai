@@ -21,7 +21,8 @@ import tempfile
 from gtts import gTTS
 import PyPDF2
 from werkzeug.utils import secure_filename
-import PyMuPDF as fitz  # PyMuPDF for PDF rendering
+import PyMuPDF 
+import fitz # PyMuPDF for PDF rendering
 from datetime import datetime
 # Configure logging
 logging.basicConfig(level=logging.INFO)
