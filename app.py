@@ -5,9 +5,9 @@ from cerebras.cloud.sdk import Cerebras
 import os
 import tempfile
 from gtts import gTTS
-import PyPDF2
+import PyMuPDF as fitz
 from werkzeug.utils import secure_filename
-import fitz  # PyMuPDF for PDF rendering
+# import fitz  # PyMuPDF for PDF rendering
 from datetime import datetime
 from flask import Flask, request, jsonify
 import logging
