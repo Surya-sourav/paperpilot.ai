@@ -211,7 +211,7 @@ document.getElementById('pdf-upload').addEventListener('change', async (event) =
     }
 });
 
-// Magic Select Handler
+// Magic Select Handler with improved note saving
 document.querySelector('.magic-select-btn').addEventListener('click', async () => {
     if (!selectedText) {
         showError('Please select some text first');
@@ -230,10 +230,17 @@ document.querySelector('.magic-select-btn').addEventListener('click', async () =
         
         const data = await response.json();
         if (response.ok) {
-            // Insert notes at current cursor position or at the end
+            // Insert notes with proper formatting
             const range = quill.getSelection(true);
             const index = range ? range.index : quill.getLength();
-            quill.insertText(index, '\n' + data.notes + '\n');
+            
+            // Insert with formatting
+            quill.insertText(index, '\n', 'normal');
+            quill.insertText(index + 1, data.notes, {
+                'bold': true,
+                'color': '#000000'
+            });
+            quill.insertText(index + data.notes.length + 1, '\n', 'normal');
             
             // Clear selection
             window.getSelection().removeAllRanges();
@@ -314,21 +321,29 @@ async function summarizeAll() {
     
     showLoading(true);
     try {
-        const response = await fetch('/summarize_selection', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ selected_text: paperContent })
-        });
+        // Split content into chunks if it's too long
+        const chunks = chunkText(paperContent, 4000);
+        let fullSummary = '';
         
-        const data = await response.json();
-        if (response.ok) {
-            summaryCache[cacheKey] = data.summary;
-            summaryResult.textContent = data.summary;
-        } else {
-            showError(data.error || 'Error generating summary');
+        for (const chunk of chunks) {
+            const response = await fetch('/summarize_selection', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ selected_text: chunk })
+            });
+            
+            const data = await response.json();
+            if (response.ok) {
+                fullSummary += data.summary + '\n\n';
+            } else {
+                throw new Error(data.error || 'Error generating summary');
+            }
         }
+        
+        summaryCache[cacheKey] = fullSummary.trim();
+        summaryResult.textContent = fullSummary.trim();
     } catch (error) {
         showError('Error communicating with server');
     } finally {
@@ -366,7 +381,7 @@ document.querySelector('.summarize-btn').addEventListener('click', async () => {
     }
 });
 
-// Podcast Functionality
+// Updated Podcast Functionality with chunking
 document.querySelector('[data-tab="podcast"]').addEventListener('click', async () => {
     const cacheKey = paperContent;
     if (podcastCache[cacheKey]) {
@@ -377,30 +392,40 @@ document.querySelector('[data-tab="podcast"]').addEventListener('click', async (
     
     showLoading(true);
     try {
-        const response = await fetch('/generate_podcast', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ paper_content: paperContent })
-        });
+        // Split content into smaller chunks to avoid context length limit
+        const chunks = chunkText(paperContent, 4000);
+        let fullScript = '';
         
-        const data = await response.json();
-        if (response.ok) {
-            podcastCache[cacheKey] = data.podcast_script;
-            podcastScript.textContent = data.podcast_script;
-            audioPlayer.style.display = 'block';
+        for (const chunk of chunks) {
+            const response = await fetch('/generate_podcast', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ paper_content: chunk })
+            });
             
-            if (!document.getElementById('generateAudioBtn')) {
-                const generateBtn = document.createElement('button');
-                generateBtn.id = 'generateAudioBtn';
-                generateBtn.className = 'action-button';
-                generateBtn.innerHTML = '<i class="fas fa-play"></i> Generate Audio';
-                generateBtn.onclick = () => generateAudio(data.podcast_script);
-                audioPlayer.insertBefore(generateBtn, audioPlayer.firstChild);
+            const data = await response.json();
+            if (response.ok) {
+                fullScript += data.podcast_script + '\n\n';
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Rate limiting
+            } else {
+                throw new Error(data.error || 'Error generating podcast script');
             }
-        } else {
-            showError(data.error || 'Error generating podcast');
+        }
+        
+        const finalScript = fullScript.trim();
+        podcastCache[cacheKey] = finalScript;
+        podcastScript.textContent = finalScript;
+        audioPlayer.style.display = 'block';
+        
+        if (!document.getElementById('generateAudioBtn')) {
+            const generateBtn = document.createElement('button');
+            generateBtn.id = 'generateAudioBtn';
+            generateBtn.className = 'action-button';
+            generateBtn.innerHTML = '<i class="fas fa-play"></i> Generate Audio';
+            generateBtn.onclick = () => generateAudio(finalScript);
+            audioPlayer.insertBefore(generateBtn, audioPlayer.firstChild);
         }
     } catch (error) {
         showError('Error generating podcast');
@@ -413,52 +438,66 @@ document.querySelector('[data-tab="podcast"]').addEventListener('click', async (
 async function generateAudio(text) {
     showLoading(true);
     try {
-        const response = await fetch('/generate_audio', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ text: text })
-        });
+        // Split audio generation into chunks if needed
+        const chunks = chunkText(text, 4000);
+        const audioChunks = [];
         
-        if (response.ok) {
-            const blob = await response.blob();
-            const url = URL.createObjectURL(blob);
-            const audio = audioPlayer.querySelector('audio');
-            audio.src = url;
-            // Don't autoplay
-        } else {
-            const data = await response.json();
-            showError(data.error || 'Error generating audio');
+        for (const chunk of chunks) {
+            const response = await fetch('/generate_audio', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ text: chunk })
+            });
+            
+            if (response.ok) {
+                const blob = await response.blob();
+                audioChunks.push(blob);
+            } else {
+                const data = await response.json();
+                throw new Error(data.error || 'Error generating audio');
+            }
         }
+        
+        // Combine audio chunks
+        const combinedBlob = new Blob(audioChunks, { type: 'audio/mpeg' });
+        const url = URL.createObjectURL(combinedBlob);
+        const audio = audioPlayer.querySelector('audio');
+        audio.src = url;
     } catch (error) {
         showError('Error generating audio');
+        console.error(error);
     } finally {
         showLoading(false);
     }
 }
 
-// Utility Functions
-function showLoading(show) {
-    loadingElement.style.display = show ? 'block' : 'none';
-}
-
-function showError(message) {
-    alert(message);
-}
-
-// Add save notes as PDF functionality
+// Improved PDF saving functionality
 async function saveNotesAsPDF() {
     try {
         const { PDFDocument, rgb, StandardFonts } = PDFLib;
         const pdfDoc = await PDFDocument.create();
         const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
         
-        // Get notes content from Quill editor
-        const notesContent = quill.root.innerText;
+        // Get notes content with proper formatting
+        const deltaOps = quill.getContents().ops;
+        let processedContent = '';
         
-        // Split content into chunks to avoid exceeding context length
-        const chunks = chunkText(notesContent, 5000); // Split into 5000 char chunks
+        // Process Quill Delta format to maintain basic formatting
+        deltaOps.forEach(op => {
+            if (typeof op.insert === 'string') {
+                let text = op.insert;
+                if (op.attributes) {
+                    if (op.attributes.bold) text = `*${text}*`;
+                    if (op.attributes.italic) text = `_${text}_`;
+                }
+                processedContent += text;
+            }
+        });
+        
+        // Split content into chunks
+        const chunks = chunkText(processedContent, 4000);
         
         for (const chunk of chunks) {
             let page = pdfDoc.addPage();
@@ -470,35 +509,28 @@ async function saveNotesAsPDF() {
             const lineHeight = 1.2;
             const maxWidth = width - 2 * margin;
             
-            // Split chunk into lines that fit within the page width
-            const words = chunk.split(' ');
-            let lines = [''];
-            let currentLine = 0;
-            
-            words.forEach(word => {
-                const testLine = lines[currentLine] + word + ' ';
-                const testWidth = timesRomanFont.widthOfTextAtSize(testLine, fontSize);
-                
-                if (testWidth <= maxWidth) {
-                    lines[currentLine] = testLine;
-                } else {
-                    currentLine++;
-                    lines[currentLine] = word + ' ';
-                }
-            });
+            // Split chunk into lines
+            const lines = splitTextIntoLines(chunk, timesRomanFont, fontSize, maxWidth);
             
             // Draw text on pages
             let y = height - margin;
             const linesPerPage = Math.floor((height - 2 * margin) / (fontSize * lineHeight));
             
             lines.forEach((line, index) => {
-                // Create new page if needed
                 if (index > 0 && index % linesPerPage === 0) {
                     page = pdfDoc.addPage();
                     y = height - margin;
                 }
                 
-                page.drawText(line.trim(), {
+                // Handle basic formatting markers
+                let text = line.trim();
+                let isBold = text.startsWith('*') && text.endsWith('*');
+                let isItalic = text.startsWith('_') && text.endsWith('_');
+                
+                if (isBold) text = text.slice(1, -1);
+                if (isItalic) text = text.slice(1, -1);
+                
+                page.drawText(text, {
                     x: margin,
                     y: y,
                     size: fontSize,
@@ -508,11 +540,6 @@ async function saveNotesAsPDF() {
                 });
                 
                 y -= fontSize * lineHeight;
-                
-                // Reset y position for new page
-                if (y < margin) {
-                    y = height - margin;
-                }
             });
         }
         
@@ -521,7 +548,6 @@ async function saveNotesAsPDF() {
         const blob = new Blob([pdfBytes], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
         
-        // Create download link
         const link = document.createElement('a');
         link.href = url;
         link.download = 'research_notes.pdf';
@@ -536,6 +562,15 @@ async function saveNotesAsPDF() {
     }
 }
 
+// Utility Functions
+function showLoading(show) {
+    loadingElement.style.display = show ? 'block' : 'none';
+}
+
+function showError(message) {
+    alert(message);
+}
+
 // Update the save PDF button event listener
 document.querySelector('.save-pdf-btn').addEventListener('click', saveNotesAsPDF);
 
@@ -548,18 +583,39 @@ function chunkText(text, maxLength) {
     
     for (const sentence of sentences) {
         if (currentChunk.length + sentence.length > maxLength) {
-            chunks.push(currentChunk);
+            chunks.push(currentChunk.trim());
             currentChunk = sentence;
         } else {
             currentChunk += sentence;
         }
     }
     
-    if (currentChunk) {
-        chunks.push(currentChunk);
+    if (currentChunk.trim()) {
+        chunks.push(currentChunk.trim());
     }
     
     return chunks;
+}
+
+// Helper function to split text into lines
+function splitTextIntoLines(text, font, fontSize, maxWidth) {
+    const words = text.split(' ');
+    const lines = [''];
+    let currentLine = 0;
+
+    words.forEach(word => {
+        const testLine = lines[currentLine] + word + ' ';
+        const testWidth = font.widthOfTextAtSize(testLine, fontSize);
+        
+        if (testWidth <= maxWidth) {
+            lines[currentLine] = testLine;
+        } else {
+            currentLine++;
+            lines[currentLine] = word + ' ';
+        }
+    });
+
+    return lines;
 }
 
 // Add styles for better text selection visibility
