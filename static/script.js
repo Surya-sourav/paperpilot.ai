@@ -230,16 +230,16 @@ document.querySelector('.magic-select-btn').addEventListener('click', async () =
         
         const data = await response.json();
         if (response.ok) {
-            // Insert notes with proper formatting that can be saved as PDF
+            // Insert notes with proper formatting
             const range = quill.getSelection(true);
             const index = range ? range.index : quill.getLength();
             
-            // Insert formatted text using Quill's Delta format
+            // Insert with proper Delta operations
             quill.updateContents([
                 { insert: '\n' },
                 { insert: data.notes, attributes: { bold: true } },
-                { insert: '\n' }
-            ]);
+                { insert: '\n\n' }
+            ], 'user');
             
             // Clear selection
             window.getSelection().removeAllRanges();
@@ -477,104 +477,154 @@ async function generateAudio(text) {
 // Improved PDF saving functionality
 async function saveNotesAsPDF() {
     try {
+        // First check if we have content to save
+        const content = quill.getText().trim();
+        if (!content) {
+            showError('No content to save');
+            return;
+        }
+
         const { PDFDocument, rgb, StandardFonts } = PDFLib;
         const pdfDoc = await PDFDocument.create();
-        const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
-        const timesBoldFont = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
         
-        // Get notes content directly from Quill's Delta format
+        // Embed both regular and bold fonts
+        const regularFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+        const boldFont = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
+
+        // Get Quill contents as Delta
         const delta = quill.getContents();
-        const contents = delta.ops;
         
+        // Initialize first page
         let currentPage = pdfDoc.addPage();
         const { width, height } = currentPage.getSize();
-        const fontSize = 12;
         const margin = 50;
-        const lineHeight = fontSize * 1.2;
+        const fontSize = 12;
+        const lineHeight = fontSize * 1.5;
         let y = height - margin;
-        
-        for (const op of contents) {
+        let x = margin;
+
+        // Process each operation in the Delta
+        for (const op of delta.ops) {
+            // Skip if not text content
             if (typeof op.insert !== 'string') continue;
+
+            // Handle line breaks
+            const textSegments = op.insert.split('\n');
             
-            const text = op.insert.replace(/\n$/, '');
-            if (!text) {
-                y -= lineHeight;
-                continue;
-            }
-            
-            const font = op.attributes?.bold ? timesBoldFont : timesRomanFont;
-            const words = text.split(' ');
-            let line = '';
-            
-            for (const word of words) {
-                const testLine = line + (line ? ' ' : '') + word;
-                const lineWidth = font.widthOfTextAtSize(testLine, fontSize);
+            for (let i = 0; i < textSegments.length; i++) {
+                const text = textSegments[i];
                 
-                if (lineWidth > width - 2 * margin) {
-                    // Add new page if needed
-                    if (y < margin + fontSize) {
+                // Select font based on formatting
+                const font = (op.attributes && op.attributes.bold) ? boldFont : regularFont;
+                
+                // If text segment is empty and we have a line break, move to next line
+                if (text === '' && i < textSegments.length - 1) {
+                    y -= lineHeight;
+                    x = margin;
+                    
+                    // Create new page if needed
+                    if (y < margin) {
                         currentPage = pdfDoc.addPage();
                         y = height - margin;
                     }
+                    continue;
+                }
+                
+                // Split text into words
+                const words = text.split(' ');
+                let currentLine = '';
+                
+                // Process each word
+                for (const word of words) {
+                    const testLine = currentLine + (currentLine ? ' ' : '') + word;
+                    const textWidth = font.widthOfTextAtSize(testLine, fontSize);
                     
-                    // Draw current line
-                    currentPage.drawText(line, {
-                        x: margin,
-                        y: y,
-                        size: fontSize,
-                        font: font,
-                        color: rgb(0, 0, 0)
-                    });
-                    
-                    line = word;
+                    // Check if we need to wrap to next line
+                    if (textWidth > width - (2 * margin)) {
+                        // Draw current line
+                        if (currentLine) {
+                            try {
+                                currentPage.drawText(currentLine, {
+                                    x,
+                                    y,
+                                    size: fontSize,
+                                    font,
+                                    color: rgb(0, 0, 0),
+                                });
+                            } catch (err) {
+                                console.error('Error drawing text:', err);
+                                // Continue with next line
+                            }
+                            
+                            y -= lineHeight;
+                            x = margin;
+                            
+                            // Create new page if needed
+                            if (y < margin) {
+                                currentPage = pdfDoc.addPage();
+                                y = height - margin;
+                            }
+                        }
+                        currentLine = word;
+                    } else {
+                        currentLine = testLine;
+                    }
+                }
+                
+                // Draw remaining text
+                if (currentLine) {
+                    try {
+                        currentPage.drawText(currentLine, {
+                            x,
+                            y,
+                            size: fontSize,
+                            font,
+                            color: rgb(0, 0, 0),
+                        });
+                    } catch (err) {
+                        console.error('Error drawing final text:', err);
+                        // Continue with next segment
+                    }
+                }
+                
+                // Move to next line if we have more segments
+                if (i < textSegments.length - 1) {
                     y -= lineHeight;
-                } else {
-                    line = testLine;
+                    x = margin;
+                    
+                    // Create new page if needed
+                    if (y < margin) {
+                        currentPage = pdfDoc.addPage();
+                        y = height - margin;
+                    }
                 }
-            }
-            
-            // Draw remaining text
-            if (line) {
-                if (y < margin + fontSize) {
-                    currentPage = pdfDoc.addPage();
-                    y = height - margin;
-                }
-                
-                currentPage.drawText(line, {
-                    x: margin,
-                    y: y,
-                    size: fontSize,
-                    font: font,
-                    color: rgb(0, 0, 0)
-                });
-                
-                y -= lineHeight;
-            }
-            
-            // Add extra line break for paragraphs
-            if (op.insert.endsWith('\n')) {
-                y -= lineHeight;
             }
         }
-        
-        // Save the PDF
-        const pdfBytes = await pdfDoc.save();
-        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-        const url = URL.createObjectURL(blob);
-        
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'research_notes.pdf';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+
+        // Save and download the PDF
+        try {
+            const pdfBytes = await pdfDoc.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'research_notes.pdf';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error('Error saving PDF:', err);
+            throw new Error('Failed to generate PDF file');
+        }
         
     } catch (error) {
-        console.error('Error saving PDF:', error);
-        showError('Error saving notes as PDF');
+        console.error('PDF Generation Error:', error);
+        showError('Error saving notes as PDF: ' + (error.message || 'Unknown error'));
     }
 }
+
 
 
 // Utility Functions
