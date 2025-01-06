@@ -539,6 +539,28 @@ async function saveNotesAsPDF() {
 // Update the save PDF button event listener
 document.querySelector('.save-pdf-btn').addEventListener('click', saveNotesAsPDF);
 
+// Utility function to chunk text
+function chunkText(text, maxLength) {
+    const chunks = [];
+    let currentChunk = '';
+    
+    const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+    
+    for (const sentence of sentences) {
+        if (currentChunk.length + sentence.length > maxLength) {
+            chunks.push(currentChunk);
+            currentChunk = sentence;
+        } else {
+            currentChunk += sentence;
+        }
+    }
+    
+    if (currentChunk) {
+        chunks.push(currentChunk);
+    }
+    
+    return chunks;
+}
 
 // Add styles for better text selection visibility
 const styles = document.createElement('style');
