@@ -367,26 +367,6 @@ def convert_to_notes():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/submit_feedback', methods=['POST'])
-def submit_feedback():
-    try:
-        data = request.get_json()
-        
-        # Open the Google Sheet
-        sheet = client.open_by_key(SPREADSHEET_ID).sheet1
-        
-        # Append the feedback to the sheet
-        sheet.append_row([
-            datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            data['name'],
-            data['email'],
-            data['feedback']
-        ])
-        
-        return jsonify({'success': True})
-    except Exception as e:
-        logger.error(f"Error submitting feedback: {e}")
-        return jsonify({'error': str(e)}), 500
     
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
