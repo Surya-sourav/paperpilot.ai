@@ -230,17 +230,16 @@ document.querySelector('.magic-select-btn').addEventListener('click', async () =
         
         const data = await response.json();
         if (response.ok) {
-            // Insert notes with proper formatting
+            // Insert notes with proper formatting that can be saved as PDF
             const range = quill.getSelection(true);
             const index = range ? range.index : quill.getLength();
             
-            // Insert with formatting
-            quill.insertText(index, '\n', 'normal');
-            quill.insertText(index + 1, data.notes, {
-                'bold': true,
-                'color': '#000000'
-            });
-            quill.insertText(index + data.notes.length + 1, '\n', 'normal');
+            // Insert formatted text using Quill's Delta format
+            quill.updateContents([
+                { insert: '\n' },
+                { insert: data.notes, attributes: { bold: true } },
+                { insert: '\n' }
+            ]);
             
             // Clear selection
             window.getSelection().removeAllRanges();
@@ -255,6 +254,8 @@ document.querySelector('.magic-select-btn').addEventListener('click', async () =
         showLoading(false);
     }
 });
+
+
 
 // Chat Functionality
 chatInput?.addEventListener('keypress', (e) => {
@@ -479,68 +480,81 @@ async function saveNotesAsPDF() {
         const { PDFDocument, rgb, StandardFonts } = PDFLib;
         const pdfDoc = await PDFDocument.create();
         const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+        const timesBoldFont = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
         
-        // Get notes content with proper formatting
-        const deltaOps = quill.getContents().ops;
-        let processedContent = '';
+        // Get notes content directly from Quill's Delta format
+        const delta = quill.getContents();
+        const contents = delta.ops;
         
-        // Process Quill Delta format to maintain basic formatting
-        deltaOps.forEach(op => {
-            if (typeof op.insert === 'string') {
-                let text = op.insert;
-                if (op.attributes) {
-                    if (op.attributes.bold) text = `*${text}*`;
-                    if (op.attributes.italic) text = `_${text}_`;
-                }
-                processedContent += text;
+        let currentPage = pdfDoc.addPage();
+        const { width, height } = currentPage.getSize();
+        const fontSize = 12;
+        const margin = 50;
+        const lineHeight = fontSize * 1.2;
+        let y = height - margin;
+        
+        for (const op of contents) {
+            if (typeof op.insert !== 'string') continue;
+            
+            const text = op.insert.replace(/\n$/, '');
+            if (!text) {
+                y -= lineHeight;
+                continue;
             }
-        });
-        
-        // Split content into chunks
-        const chunks = chunkText(processedContent, 4000);
-        
-        for (const chunk of chunks) {
-            let page = pdfDoc.addPage();
-            const { width, height } = page.getSize();
             
-            // Set some basic styling
-            const fontSize = 12;
-            const margin = 50;
-            const lineHeight = 1.2;
-            const maxWidth = width - 2 * margin;
+            const font = op.attributes?.bold ? timesBoldFont : timesRomanFont;
+            const words = text.split(' ');
+            let line = '';
             
-            // Split chunk into lines
-            const lines = splitTextIntoLines(chunk, timesRomanFont, fontSize, maxWidth);
+            for (const word of words) {
+                const testLine = line + (line ? ' ' : '') + word;
+                const lineWidth = font.widthOfTextAtSize(testLine, fontSize);
+                
+                if (lineWidth > width - 2 * margin) {
+                    // Add new page if needed
+                    if (y < margin + fontSize) {
+                        currentPage = pdfDoc.addPage();
+                        y = height - margin;
+                    }
+                    
+                    // Draw current line
+                    currentPage.drawText(line, {
+                        x: margin,
+                        y: y,
+                        size: fontSize,
+                        font: font,
+                        color: rgb(0, 0, 0)
+                    });
+                    
+                    line = word;
+                    y -= lineHeight;
+                } else {
+                    line = testLine;
+                }
+            }
             
-            // Draw text on pages
-            let y = height - margin;
-            const linesPerPage = Math.floor((height - 2 * margin) / (fontSize * lineHeight));
-            
-            lines.forEach((line, index) => {
-                if (index > 0 && index % linesPerPage === 0) {
-                    page = pdfDoc.addPage();
+            // Draw remaining text
+            if (line) {
+                if (y < margin + fontSize) {
+                    currentPage = pdfDoc.addPage();
                     y = height - margin;
                 }
                 
-                // Handle basic formatting markers
-                let text = line.trim();
-                let isBold = text.startsWith('*') && text.endsWith('*');
-                let isItalic = text.startsWith('_') && text.endsWith('_');
-                
-                if (isBold) text = text.slice(1, -1);
-                if (isItalic) text = text.slice(1, -1);
-                
-                page.drawText(text, {
+                currentPage.drawText(line, {
                     x: margin,
                     y: y,
                     size: fontSize,
-                    font: timesRomanFont,
-                    color: rgb(0, 0, 0),
-                    lineHeight: fontSize * lineHeight,
+                    font: font,
+                    color: rgb(0, 0, 0)
                 });
                 
-                y -= fontSize * lineHeight;
-            });
+                y -= lineHeight;
+            }
+            
+            // Add extra line break for paragraphs
+            if (op.insert.endsWith('\n')) {
+                y -= lineHeight;
+            }
         }
         
         // Save the PDF
@@ -561,6 +575,7 @@ async function saveNotesAsPDF() {
         showError('Error saving notes as PDF');
     }
 }
+
 
 // Utility Functions
 function showLoading(show) {
