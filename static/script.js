@@ -539,39 +539,6 @@ async function saveNotesAsPDF() {
 // Update the save PDF button event listener
 document.querySelector('.save-pdf-btn').addEventListener('click', saveNotesAsPDF);
 
-// Feedback form submission
-document.getElementById('feedbackForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    showLoading(true);
-    
-    try {
-        const formData = new FormData(e.target);
-        const response = await fetch('/submit_feedback', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                name: formData.get('name'),
-                email: formData.get('email'),
-                feedback: formData.get('feedback')
-            })
-        });
-        
-        if (response.ok) {
-            alert('Thank you for your feedback!');
-            e.target.reset();
-            modals.contact.style.display = 'none';
-        } else {
-            const data = await response.json();
-            throw new Error(data.error || 'Failed to submit feedback');
-        }
-    } catch (error) {
-        alert('Error submitting feedback: ' + error.message);
-    } finally {
-        showLoading(false);
-    }
-});
 
 // Add styles for better text selection visibility
 const styles = document.createElement('style');
