@@ -457,60 +457,64 @@ async function saveNotesAsPDF() {
         // Get notes content from Quill editor
         const notesContent = quill.root.innerText;
         
-        // Create first page
-        let page = pdfDoc.addPage();
-        const { width, height } = page.getSize();
+        // Split content into chunks to avoid exceeding context length
+        const chunks = chunkText(notesContent, 5000); // Split into 5000 char chunks
         
-        // Set some basic styling
-        const fontSize = 12;
-        const margin = 50;
-        const lineHeight = 1.2;
-        const maxWidth = width - 2 * margin;
-        
-        // Split content into lines that fit within the page width
-        const words = notesContent.split(' ');
-        let lines = [''];
-        let currentLine = 0;
-        
-        words.forEach(word => {
-            const testLine = lines[currentLine] + word + ' ';
-            const testWidth = timesRomanFont.widthOfTextAtSize(testLine, fontSize);
+        for (const chunk of chunks) {
+            let page = pdfDoc.addPage();
+            const { width, height } = page.getSize();
             
-            if (testWidth <= maxWidth) {
-                lines[currentLine] = testLine;
-            } else {
-                currentLine++;
-                lines[currentLine] = word + ' ';
-            }
-        });
-        
-        // Draw text on pages
-        let y = height - margin;
-        const linesPerPage = Math.floor((height - 2 * margin) / (fontSize * lineHeight));
-        
-        lines.forEach((line, index) => {
-            // Create new page if needed
-            if (index > 0 && index % linesPerPage === 0) {
-                page = pdfDoc.addPage();
-                y = height - margin;
-            }
+            // Set some basic styling
+            const fontSize = 12;
+            const margin = 50;
+            const lineHeight = 1.2;
+            const maxWidth = width - 2 * margin;
             
-            page.drawText(line.trim(), {
-                x: margin,
-                y: y,
-                size: fontSize,
-                font: timesRomanFont,
-                color: rgb(0, 0, 0),
-                lineHeight: fontSize * lineHeight,
+            // Split chunk into lines that fit within the page width
+            const words = chunk.split(' ');
+            let lines = [''];
+            let currentLine = 0;
+            
+            words.forEach(word => {
+                const testLine = lines[currentLine] + word + ' ';
+                const testWidth = timesRomanFont.widthOfTextAtSize(testLine, fontSize);
+                
+                if (testWidth <= maxWidth) {
+                    lines[currentLine] = testLine;
+                } else {
+                    currentLine++;
+                    lines[currentLine] = word + ' ';
+                }
             });
             
-            y -= fontSize * lineHeight;
+            // Draw text on pages
+            let y = height - margin;
+            const linesPerPage = Math.floor((height - 2 * margin) / (fontSize * lineHeight));
             
-            // Reset y position for new page
-            if (y < margin) {
-                y = height - margin;
-            }
-        });
+            lines.forEach((line, index) => {
+                // Create new page if needed
+                if (index > 0 && index % linesPerPage === 0) {
+                    page = pdfDoc.addPage();
+                    y = height - margin;
+                }
+                
+                page.drawText(line.trim(), {
+                    x: margin,
+                    y: y,
+                    size: fontSize,
+                    font: timesRomanFont,
+                    color: rgb(0, 0, 0),
+                    lineHeight: fontSize * lineHeight,
+                });
+                
+                y -= fontSize * lineHeight;
+                
+                // Reset y position for new page
+                if (y < margin) {
+                    y = height - margin;
+                }
+            });
+        }
         
         // Save the PDF
         const pdfBytes = await pdfDoc.save();
